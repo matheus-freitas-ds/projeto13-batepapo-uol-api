@@ -38,7 +38,7 @@ app.post("/participants", async (req, res) => {
 
     try {
         const participant = await db.collection("participants").findOne({ name: name })
-        if (participant) return res.status(409).send("This username is taken!")
+        if (participant) return res.sendStatus(409)
 
         await Promise.all([db.collection("participants").insertOne(newParticipant), db.collection("messages").insertOne(newMessage)])
         res.sendStatus(201)
@@ -80,7 +80,7 @@ app.post("/messages", async (req, res) => {
 
     try {
         const participant = await db.collection("participants").findOne({ name: user })
-        if (!participant) return res.status(422).send("Nome não encontrado")
+        if (!participant) return res.sendStatus(422)
 
         await db.collection("messages").insertOne(newMessage)
         res.sendStatus(201)
@@ -95,28 +95,42 @@ app.get("/messages", async (req, res) => {
     const limit = Number(req.query.limit)
 
     try {
-        const messages = await db.collection("messages").find({ $or: [ { to: "Todos" }, { to: user }, { from: user } ]}).toArray()
+        const messages = await db.collection("messages").find({ $or: [{ to: "Todos" }, { to: user }, { from: user }] }).toArray()
         if (!req.query.limit || limit > 0) return res.send(messages.slice(-limit))
-        
-        if (req.query.limit && isNaN(limit) || limit < 1 ) return res.status(422).send("Limit inválido")
-    } catch (err){
+
+        if (req.query.limit && isNaN(limit) || limit < 1) return res.sendStatus(422)
+    } catch (err) {
         res.status(500).send(err.message)
     }
 })
 
 app.post("/status", async (req, res) => {
-    const user = req.headers.user 
+    const user = req.headers.user
 
     try {
         const participant = await db.collection("participants").findOne({ name: user })
         if (!user || !participant) return res.sendStatus(404)
 
-        await db.collection("participants").updateOne( { name: user }, { $set: {lastStatus: Date.now()} })
+        await db.collection("participants").updateOne({ name: user }, { $set: { lastStatus: Date.now() } })
         res.sendStatus(200)
     } catch (err) {
         res.status(500).send(err.message)
     }
 })
+
+
+setInterval(async () => {
+    const inactivity = Date.now() - 10000
+
+    try {
+        const inactiveParticipant = await db.collection("participants").findOne({ lastStatus: { $lt: inactivity } }).toArray()
+        const participantRemoved = { from: inactiveParticipant.name, to: 'Todos', text: 'sai da sala...', type: 'status', time: dayjs().format('HH:mm:ss') }
+
+        await Promise.all([db.collection("messages").insertOne(participantRemoved), db.collection("participants").deleteOne(inactiveParticipant)])
+    } catch (err) {
+        console.log(err.message)
+    }
+}, 15000)
 
 //FIM DA LÓGICA DO BACK-END
 
