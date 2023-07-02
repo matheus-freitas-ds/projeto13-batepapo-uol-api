@@ -34,12 +34,13 @@ app.post("/participants", async (req, res) => {
     }
 
     const newParticipant = { name: name, lastStatus: Date.now() }
+    const newMessage = { from: name, to: 'Todos', text: 'Entra na sala...', type: 'status', time: dayjs().format('HH:mm:ss') }
 
     try {
         const participant = await db.collection("participants").findOne({ name: name })
         if (participant) return res.status(409).send("This username is taken!")
 
-        await Promise.all([db.collection("participants").insertOne(newParticipant), db.collection("messages").insertOne({ from: name, to: 'Todos', text: 'Entra na sala...', type: 'status', time: dayjs().format('HH:mm:ss') })])
+        await Promise.all([db.collection("participants").insertOne(newParticipant), db.collection("messages").insertOne(newMessage)])
         res.sendStatus(201)
     } catch (err) {
         res.status(500).send(err.message)
@@ -87,6 +88,20 @@ app.post("/messages", async (req, res) => {
         res.status(500).send(err.message)
     }
 
+})
+
+app.get("/messages", async (req, res) => {
+    const user = req.headers.user
+    const limit = Number(req.query.limit)
+
+    try {
+        const messages = await db.collection("messages").find({ $or: [ { to: "Todos" || user }, { from: user } ]}).toArray()
+        if (!req.query.limit || limit > 0) return res.send(messages.slice(-limit))
+        
+        if (req.query.limit && isNaN(limit) || limit < 1 ) return res.status(422).send("Limit inválido")
+    } catch (err){
+        res.status(500).send(err.message)
+    }
 })
 
 //FIM DA LÓGICA DO BACK-END
