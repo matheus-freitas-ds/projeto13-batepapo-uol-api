@@ -3,6 +3,7 @@ import cors from "cors";
 import dotenv from "dotenv";
 import { MongoClient, ObjectId } from "mongodb";
 import joi from "joi";
+import dayjs from "dayjs";
 
 const app = express();
 app.use(cors());
@@ -38,7 +39,7 @@ app.post("/participants", async (req, res) => {
         const participant = await db.collection("participants").findOne({ name: name })
         if (participant) return res.status(409).send("This username is taken!")
 
-        await Promise.all([db.collection("participants").insertOne(newParticipant), db.collection("messages").insertOne({ from: name, to: 'Todos', text: 'Entra na sala...', type: 'status', time: 'HH:mm:ss' })])
+        await Promise.all([db.collection("participants").insertOne(newParticipant), db.collection("messages").insertOne({ from: name, to: 'Todos', text: 'Entra na sala...', type: 'status', time: dayjs().format('HH:mm:ss') })])
         res.sendStatus(201)
     } catch (err) {
         res.status(500).send(err.message)
