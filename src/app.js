@@ -126,7 +126,7 @@ setInterval(async () => {
         const inactiveParticipant = await db.collection("participants").findOne({ lastStatus: { $lt: inactivity } }).toArray()
         const participantRemoved = { from: inactiveParticipant.name, to: 'Todos', text: 'sai da sala...', type: 'status', time: dayjs().format('HH:mm:ss') }
 
-        await Promise.all([db.collection("messages").insertOne(participantRemoved), db.collection("participants").deleteOne(inactiveParticipant)])
+        await Promise.all([db.collection("messages").insertOne(participantRemoved), db.collection("participants").deleteOne({ lastStatus: { $lt: inactivity } })])
     } catch (err) {
         console.log(err.message)
     }
