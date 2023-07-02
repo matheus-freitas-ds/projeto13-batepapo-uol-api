@@ -104,6 +104,20 @@ app.get("/messages", async (req, res) => {
     }
 })
 
+app.post("/status", async (req, res) => {
+    const user = req.headers.user 
+
+    try {
+        const participant = await db.collection("participants").findOne({ name: user })
+        if (!user || !participant) return res.send(404)
+
+        await db.collection("participants").updateOne( { name: user }, { $set: {lastStatus: Date.now()} })
+        res.sendStatus(201)
+    } catch (err) {
+        res.status(500).send(err.message)
+    }
+})
+
 //FIM DA LÓGICA DO BACK-END
 
 const PORT = 5000;
