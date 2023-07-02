@@ -9,7 +9,7 @@ app.use(cors());
 app.use(express.json());
 dotenv.config();
 
-const mongoClient = new MongoClient(process.env.DATABASE_URL); 
+const mongoClient = new MongoClient(process.env.DATABASE_URL);
 let db;
 
 mongoClient.connect()
@@ -27,16 +27,18 @@ app.post("/participants", async (req, res) => {
 
     const validation = schemaParticipant.validate(req.body, { abortEarly: false })
 
-    if (validation.error){
+    if (validation.error) {
         const errors = validation.error.details.map((detail) => detail.message);
         return res.status(422).send(errors);
     }
 
+    const newParticipant = { name: name, lastStatus: Date.now() }
+
     try {
-        const participant = await db.collection("participants").findOne({ name: name})
+        const participant = await db.collection("participants").findOne({ name: name })
         if (participant) return res.status(409).send("This username is taken!")
 
-        await Promise.all([db.collection("participants").insertOne(req.body, { lastStatus: Date.now() }), db.collection("messages").insertOne({from: req.body, to: 'Todos', text: 'Entra na sala...', type: 'status', time:'HH:mm:ss' })])
+        await Promise.all([db.collection("participants").insertOne(newParticipant), db.collection("messages").insertOne({ from: name, to: 'Todos', text: 'Entra na sala...', type: 'status', time: 'HH:mm:ss' })])
         res.sendStatus(201)
     } catch (err) {
         res.status(500).send(err.message)
