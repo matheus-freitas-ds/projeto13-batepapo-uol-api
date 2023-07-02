@@ -109,7 +109,7 @@ app.post("/status", async (req, res) => {
 
     try {
         const participant = await db.collection("participants").findOne({ name: user })
-        if (!user || !participant) return res.status(404)
+        if (!user || !participant) return res.sendStatus(404)
 
         await db.collection("participants").updateOne( { name: user }, { $set: {lastStatus: Date.now()} })
         res.sendStatus(200)
