@@ -1,21 +1,21 @@
-import express from "express";
-import cors from "cors";
-import dotenv from "dotenv";
-import { MongoClient, ObjectId } from "mongodb";
-import joi from "joi";
-import dayjs from "dayjs";
+import express from "express"
+import cors from "cors"
+import dotenv from "dotenv"
+import { MongoClient, ObjectId } from "mongodb"
+import joi from "joi"
+import dayjs from "dayjs"
 
-const app = express();
-app.use(cors());
-app.use(express.json());
-dotenv.config();
+const app = express()
+app.use(cors())
+app.use(express.json())
+dotenv.config()
 
-const mongoClient = new MongoClient(process.env.DATABASE_URL);
-let db;
+const mongoClient = new MongoClient(process.env.DATABASE_URL)
+let db
 
 mongoClient.connect()
     .then(() => db = mongoClient.db())
-    .catch((err) => console.log(err.message));
+    .catch((err) => console.log(err.message))
 
 // LÓGICA DO BACK-END
 
@@ -123,7 +123,7 @@ setInterval(async () => {
     const inactivity = Date.now() - 10000
 
     try {
-        const inactiveParticipant = await db.collection("participants").findOne({ lastStatus: { $lt: inactivity } }).toArray()
+        const inactiveParticipant = await db.collection("participants").findOne({ lastStatus: { $lt: inactivity } })
         const participantRemoved = { from: inactiveParticipant.name, to: 'Todos', text: 'sai da sala...', type: 'status', time: dayjs().format('HH:mm:ss') }
 
         await Promise.all([db.collection("messages").insertOne(participantRemoved), db.collection("participants").deleteOne({ lastStatus: { $lt: inactivity } })])
