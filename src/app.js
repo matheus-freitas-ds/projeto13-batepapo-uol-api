@@ -60,7 +60,7 @@ app.get("/participants", async (req, res) => {
 
 app.post("/messages", async (req, res) => {
     const { to, text, type } = req.body
-    const user = req.header.user
+    const user = req.headers.user
 
     const schemaMessage = joi.object({
         to: joi.string().required(),
@@ -71,14 +71,14 @@ app.post("/messages", async (req, res) => {
     const validation = schemaMessage.validate(req.body, { abortEarly: false })
 
     if (validation.error) {
-        const errors = validation.error.details.map((detail) => detail.message);
-        return res.status(422).send(errors);
+        const errors = validation.error.details.map((detail) => detail.message)
+        return res.status(422).send(errors)
     }
 
     const newMessage = { from: user, to, text, type, time: dayjs().format('HH:mm:ss') }
 
     try {
-        const participant = await db.collection("participants").findOne( { name: user } )
+        const participant = await db.collection("participants").findOne({ name: user })
         if (!participant) return res.status(422).send("Nome não encontrado")
 
         await db.collection("messages").insertOne(newMessage)
