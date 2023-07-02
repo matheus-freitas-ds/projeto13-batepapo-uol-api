@@ -17,8 +17,6 @@ mongoClient.connect()
     .then(() => db = mongoClient.db())
     .catch((err) => console.log(err.message))
 
-// LÓGICA DO BACK-END
-
 app.post("/participants", async (req, res) => {
     const { name } = req.body
 
@@ -51,9 +49,9 @@ app.post("/participants", async (req, res) => {
 app.get("/participants", async (req, res) => {
     try {
         const participants = await db.collection("participants").find().toArray()
-        if (!participants) {
-            return res.send([])
-        } else (res.send(participants))
+        if (!participants) return res.send([])
+        
+        res.send(participants)
     } catch (err) {
         res.status(500).send(err.message)
     }
@@ -61,7 +59,7 @@ app.get("/participants", async (req, res) => {
 
 app.post("/messages", async (req, res) => {
     const { to, text, type } = req.body
-    const user = req.headers.user
+    const { user } = req.headers
 
     const schemaMessage = joi.object({
         to: joi.string().required(),
@@ -91,7 +89,7 @@ app.post("/messages", async (req, res) => {
 })
 
 app.get("/messages", async (req, res) => {
-    const user = req.headers.user
+    const { user } = req.headers
     const limit = Number(req.query.limit)
 
     try {
@@ -118,21 +116,18 @@ app.post("/status", async (req, res) => {
     }
 })
 
-
 setInterval(async () => {
     const inactivity = Date.now() - 10000
 
     try {
         const inactiveParticipant = await db.collection("participants").findOne({ lastStatus: { $lt: inactivity } })
-        const participantRemoved = { from: inactiveParticipant.name, to: 'Todos', text: 'sai da sala...', type: 'status', time: dayjs().format('HH:mm:ss') }
+        const leavingMessage = { from: inactiveParticipant.name, to: 'Todos', text: 'sai da sala...', type: 'status', time: dayjs().format('HH:mm:ss') }
 
-        await Promise.all([db.collection("messages").insertOne(participantRemoved), db.collection("participants").deleteOne({ lastStatus: { $lt: inactivity } })])
+        await Promise.all([db.collection("messages").insertOne(leavingMessage), db.collection("participants").deleteOne({ lastStatus: { $lt: inactivity } })])
     } catch (err) {
         console.log(err.message)
     }
 }, 15000)
 
-//FIM DA LÓGICA DO BACK-END
-
-const PORT = 5000;
-app.listen(PORT, () => (`O servidor está rodando na porta ${PORT}`));
+const PORT = 5000
+app.listen(PORT, () => (`O servidor está rodando na porta ${PORT}`))
