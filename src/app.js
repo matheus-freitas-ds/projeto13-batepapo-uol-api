@@ -47,6 +47,17 @@ app.post("/participants", async (req, res) => {
 
 })
 
+app.get("/participants", async (req, res) => {
+    try {
+        const participants = await db.collection("participants").find().toArray()
+        if (!participants) {
+            return res.send([])
+        } else (res.send(participants))
+    } catch (err) {
+        res.status(500).send(err.message)
+    }
+})
+
 //FIM DA LÓGICA DO BACK-END
 
 const PORT = 5000;
