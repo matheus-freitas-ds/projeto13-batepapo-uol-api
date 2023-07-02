@@ -95,7 +95,7 @@ app.get("/messages", async (req, res) => {
     const limit = Number(req.query.limit)
 
     try {
-        const messages = await db.collection("messages").find({ $or: [ { to: "Todos" || user }, { from: user } ]}).toArray()
+        const messages = await db.collection("messages").find({ $or: [ { to: "Todos" }, { to: user }, { from: user } ]}).toArray()
         if (!req.query.limit || limit > 0) return res.send(messages.slice(-limit))
         
         if (req.query.limit && isNaN(limit) || limit < 1 ) return res.status(422).send("Limit inválido")
@@ -109,10 +109,10 @@ app.post("/status", async (req, res) => {
 
     try {
         const participant = await db.collection("participants").findOne({ name: user })
-        if (!user || !participant) return res.send(404)
+        if (!user || !participant) return res.status(404)
 
         await db.collection("participants").updateOne( { name: user }, { $set: {lastStatus: Date.now()} })
-        res.sendStatus(201)
+        res.sendStatus(200)
     } catch (err) {
         res.status(500).send(err.message)
     }
